@@ -16,7 +16,7 @@ st.title('Dashboard crédit client')
 # Importation des bases de données, et mise en cache
 @st.cache
 def import_data():
-    data_set = pd.read_csv('data/reduced_data.csv')
+    data_set = pd.read_csv('https://raw.githubusercontent.com/SPariente/credit_model_dashboard/main/data/reduced_data.csv')
     data_set.set_index('SK_ID_CURR', inplace=True)
     data_set.index = data_set.index.astype('str')
     return data_set
