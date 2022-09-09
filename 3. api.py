@@ -3,7 +3,7 @@ from flask import request, jsonify
 import numpy as np
 import pandas as pd
 import lightgbm as lgb
-from imblearn import under_sampling, over_sampling, pipeline
+from imblearn import over_sampling, pipeline
 import shap
 import joblib
 
@@ -41,17 +41,19 @@ model = loan_model(model, pos_thresh)
 # Chargement du modèle SHAP
 explainer = joblib.load('models/explainer.joblib')
 
-# App
+# Définition de l'app
 app = flask.Flask(__name__)
 
+# Méthode par défaut avec message d'accueil
 @app.route('/', methods=['GET'])
 def home():
     return """<h1>API du modèle de décision de crédit</h1>"""
 
+# Méthode d'appel du modèle
 @app.route('/upload/model', methods=['POST'])
 def model_request():
     
-    # Lecture des données client
+    # Lecture des données client envoyées
     content = request.get_json()
     X = pd.read_json(content)
     
@@ -63,10 +65,11 @@ def model_request():
                     'model_threshold':model.pos_thresh})
 
 
+# Méthode d'appel de l'explainer SHAP
 @app.route('/upload/shap', methods=['POST'])
 def shap_request():
     
-    # Lecture des données client
+    # Lecture des données client envoyées
     content = request.get_json()
     X = pd.read_json(content)
     
@@ -84,6 +87,7 @@ def shap_request():
     
     return jsonify(shap_values_dict)
 
+# Pas de cache des données
 @app.after_request
 def add_header(response):
     if 'Cache-Control' not in response.headers:

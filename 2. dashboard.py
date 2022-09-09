@@ -4,29 +4,24 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from feat_functions import *
 from functions import *
-# import lightgbm as lgb
-# import catboost as cb
-# import xgboost as xgb
-# from imblearn import under_sampling, over_sampling, pipeline
-# from sklearn.impute import SimpleImputer
 import shap
-# import joblib
 import requests
 import streamlit as st
 from ast import literal_eval
-from io import BytesIO
 import json
 import plotly.graph_objects as go
 
 st.title('Dashboard crédit client')
 
+# Importation des bases de données, et mise en cache
 @st.cache
 def import_data():
-    data_set = pd.read_csv('data/challenge_set.csv')
-    data_set.drop(columns=['TARGET'], inplace=True)
+    data_set = pd.read_csv('data/reduced_data.csv')
     data_set.set_index('SK_ID_CURR', inplace=True)
     data_set.index = data_set.index.astype('str')
     return data_set
+
+# Texte d'attente duraznt chargement
 data_load_state = st.text('Chargement en cours...')
 
 data_set = import_data()
@@ -37,6 +32,7 @@ with open('plots/hist_data.json', 'r') as file:
 with open('plots/data_dict.json', 'r') as file:
     data_dict = json.load(file)
 
+# Définition des couleurs utilisées, sur base des couleurs SHAP
 colors = shap.plots.colors
 red_shap = '#%02x%02x%02x' % tuple((colors.red_rgb*255).astype(int))
 blue_shap = '#%02x%02x%02x' % tuple((colors.blue_rgb*255).astype(int))
@@ -44,23 +40,20 @@ blue_shap = '#%02x%02x%02x' % tuple((colors.blue_rgb*255).astype(int))
 decision_colors = [blue_shap, red_shap]
 decision_text = ['Accepté', 'Refusé']
 
-# decision_text = [f'<span style="color:{blue_shap}">accepté</span>',
-# f'<span style="color:{red_shap}">refusé</span>']
-
 with open('models/top_features.txt', 'r') as file:
     features = literal_eval(file.read())
 
-
-# Notify the reader that the data was successfully loaded.
+# Notification du chargement terminé
 data_load_state.text("Chargement terminé.")
 
-
+# Zone de saisie de l'identifiant client
 st.subheader('Identifiant client')
 cust_id = st.text_input("Saisir l'identifiant client",
                         placeholder='Identifiant client',
                         value='',
                         max_chars=6)
 
+# Appel de l'API, et mise en cache
 @st.cache(suppress_st_warning=True)
 def api_call(cust_id):
 
@@ -102,11 +95,9 @@ def api_call(cust_id):
     return id_found, cust_X, decision, thresh, shap_values, def_vars
 
 id_found, cust_X, decision, thresh, shap_values, def_vars = api_call(cust_id)
-    
+
 if id_found:
     st.subheader('Décision de crédit')
-    # st.markdown(f'Statut : **<span style="color:{decision_colors[decision]}">{decision_text[decision]}</span>**',
-    #             unsafe_allow_html=True)
     
     fig = go.Figure(go.Indicator(
         mode = "gauge",
@@ -121,7 +112,6 @@ if id_found:
                      {'range': [0, thresh], 'color': blue_shap},
                      {'range': [thresh, 1], 'color': red_shap}],
                  'bar': {'color': 'ivory'},
-                 # 'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 1, 'value': thresh}
                 },
         title = {'text': "Score attribué au client"}
     ))
@@ -155,16 +145,32 @@ if id_found:
                                        show=False)
         shap_wat.set_size_inches(5,2*n_feats-1)
         st.pyplot(shap_wat, bbox_inches='tight')
-        # st.image(BytesIO(r_shap.content))
     with hist_col2:
-        # top_exp_feats = np.argsort(-np.abs(shap_values.values[0][:,1]))[:5]
-        # top_exp_feats = explainer.feature_names[top_exp_feats]
         
         key_features = np.argsort(-np.abs(shap_values.values[0][:,1]))[:n_feats]
         key_features = np.array(shap_values.feature_names)[key_features]
         
-        # key_features = r_model.json()['key_features']
-        
         top_feat_fig = plot_top_feat_hist(key_features, hist_data, cust_X, decision_colors[decision])
         top_feat_fig.set_size_inches(5,2*n_feats-1)
         st.pyplot(top_feat_fig, bbox_inches='tight')
+
+if id_found:
+    st.subheader("Visualisation personnalisée")
+    sel_feat = st.selectbox(label="Saisir une information client à analyser", 
+                            options=features)
+    feat_col1, feat_col2 = st.columns(2)
+    with feat_col1:
+        st.markdown(f"Valeur : **{cust_X[sel_feat].iloc[0]}**",
+                    unsafe_allow_html=True)
+        mapping = [feat == sel_feat for feat in shap_values.feature_names]
+        shap_impact = shap_values[0][:,1].values[mapping][0]
+        st.markdown(f'Impact sur décision de crédit : **<span style="color:{decision_colors[int(shap_impact>0)]}">{shap_impact:+.3f}</span>**',
+                    unsafe_allow_html=True)
+        
+        st.markdown(f"Définition : *{data_dict[sel_feat]}*",
+                unsafe_allow_html=True)
+        
+    with feat_col2:
+        feat_fig = plot_top_feat_hist([sel_feat], hist_data, cust_X, decision_colors[decision])
+        feat_fig.set_size_inches(5,2)
+        st.pyplot(feat_fig, bbox_inches='tight')
