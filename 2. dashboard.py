@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from feat_functions import *
 from functions import *
 import shap
 import requests
@@ -80,21 +79,15 @@ def api_call(cust_id):
                 feature_names=r_shap.json()['feature_names']
             )
         
-        def_vars = pd.read_csv('data/HomeCredit_columns_description.csv', encoding='cp1252')
-        def_vars = def_vars[['Row', 'Description']]
-        def_vars.drop_duplicates(subset='Row', inplace=True)
-        def_vars.set_index('Row', inplace=True)
-        
     else:
         cust_X = None
         decision = None
         thresh = None
         shap_values = None
-        def_vars = None
         
-    return id_found, cust_X, decision, thresh, shap_values, def_vars
+    return id_found, cust_X, decision, thresh, shap_values
 
-id_found, cust_X, decision, thresh, shap_values, def_vars = api_call(cust_id)
+id_found, cust_X, decision, thresh, shap_values = api_call(cust_id)
 
 if id_found:
     st.subheader('Décision de crédit')
