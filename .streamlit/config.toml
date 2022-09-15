@@ -1,0 +1,16 @@
+[theme]
+
+# Couleur pour éléments interactifs
+primaryColor = '#DA0037'
+
+# Couleur de fond
+backgroundColor = '#171717'
+
+# Couleur pour sidebar et widgets interactifs
+secondaryBackgroundColor = '#444444'
+
+# Couleur pour texte
+textColor = '#EDEDED'
+
+# Famille de police utilisée pour le texte
+font = "sans serif"
