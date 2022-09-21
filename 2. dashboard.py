@@ -103,6 +103,7 @@ if id_found:
     
     st.subheader('Données client')
     cust_col1, cust_col2 = st.columns(2)
+    
     with cust_col1:
         st.markdown(f"Sexe : **{gender_name[cust_X['CODE_GENDER'][0]]}**",
                     unsafe_allow_html=True)
@@ -155,11 +156,11 @@ if id_found:
             """)
     
     with tab2:
-        
         shap_col1, hist_col1 = st.columns(2)
 
         with shap_col1:
             st.subheader('Visualisation des principaux drivers de la décision')
+            
         with hist_col1:
             st.subheader('Visualisation de la position relative du client sur ces indicateurs')
 
@@ -170,6 +171,7 @@ if id_found:
                             step=1)
 
         shap_col2, hist_col2 = st.columns(2)
+        
         with shap_col2:
             shap_wat = shap.waterfall_plot(shap_values[0][:,1],
                                            max_display=n_feats+1,
@@ -186,7 +188,6 @@ if id_found:
                 """)
             
         with hist_col2:
-
             key_features = np.argsort(-np.abs(shap_values.values[0][:,1]))[:n_feats]
             key_features = np.array(shap_values.feature_names)[key_features]
 
@@ -204,6 +205,7 @@ if id_found:
         sel_feat = st.selectbox(label="Saisir une information client à analyser", 
                                 options=features)
         feat_col1, feat_col2 = st.columns(2)
+        
         with feat_col1:
             st.markdown(f"Valeur : **{cust_X[sel_feat].iloc[0]}**",
                         unsafe_allow_html=True)
